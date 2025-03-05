@@ -1,0 +1,84 @@
+/* Google Font */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+
+.research-list-container {
+  font-family: 'Poppins', sans-serif;
+  padding: 30px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  max-width: 1000px;
+  margin: 50px auto;
+  color: #333;
+}
+
+h2 {
+  font-size: 2em;
+  color: #333;
+  text-align: center;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.research-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #fff;
+}
+
+.research-table th,
+.research-table td {
+  padding: 10px 15px;
+  text-align: left;
+  font-size: 1em;
+  border-bottom: 1px solid #ddd;
+}
+
+.research-table th {
+  background-color: #4a90e2;
+  color: white;
+  font-weight: 500;
+}
+
+.research-table tbody tr:hover {
+  background-color: #f0f4ff;
+}
+
+a {
+  color: #4a90e2;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+p {
+  font-size: 1.1em;
+  color: #777;
+  text-align: center;
+}
+.edit-btn, .delete-btn {
+    padding: 6px 10px;
+    font-size: 0.9em;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .edit-btn {
+    background-color: #007bff; /* Blue */
+    color: white;
+  }
+  
+  .delete-btn {
+    background-color: #dc3545; /* Red */
+    color: white;
+  }
+  
+  .edit-btn:hover {
+    background-color: #0056b3;
+  }
+  
+  .delete-btn:hover {
+    background-color: #c82333;
+  }
