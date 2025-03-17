@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Paper, Typography, IconButton, Card, CardContent, Grid, Menu, MenuItem, Box, TextField
+  Paper,  IconButton, Grid, Menu, MenuItem, Box, TextField, InputAdornment
 } from '@mui/material';
-import { MoreVert } from '@mui/icons-material';
+import { MoreVert,Search } from '@mui/icons-material';
 import Swal from 'sweetalert2';
 import notificationSound from '../sounds/notification.wav';
+import { FaCheckCircle, FaClock, FaCog, FaClipboardCheck } from "react-icons/fa";
+import StatisticCard from "./statisticcard"; 
 
 
 const CertificateRequestTable = () => {
@@ -216,55 +218,86 @@ const CertificateRequestTable = () => {
       }
     }
   };
-    const StatisticCard = ({ title, value, icon }) => (
-      <Grid item xs={12} sm={3}>
-        <Card variant="outlined" className="stat-box">
-          <CardContent style={{ textAlign: "center" }}>
-            <span className="icon" style={{ display: "block", marginBottom: "8px" }}>
-              {icon}
-            </span>
-            <Typography variant="h6" style={{ fontWeight: "bold" }}>{title}</Typography>
-            <Typography variant="body1" style={{ fontSize: "1.2em" }}>{value}</Typography>
-          </CardContent>
-        </Card>
-      </Grid>
-    );
+
+   
 
   return (
+ 
     <Box sx={{ padding: '20px', backgroundColor: '#ffffff', height: '500px', width: '100%' }}>
-  
       <Grid container spacing={2} justifyContent="center" sx={{ marginBottom: "20px" }}>
-        <StatisticCard title="Approved Request" value={approveCount} />
-        <StatisticCard title="Pending Request" value={pendingCount} />
-        <StatisticCard title="On Process Request" value={processingCount} />
-        <StatisticCard title="Ready to Claim" value={readyCount} />
+         {/* Approved Requests */}
+      <Grid item xs={12} sm={3}>
+        <StatisticCard 
+          title="Approved Request" 
+          value={approveCount} 
+          icon={<FaCheckCircle />} 
+          color="#2ecc71" // Green
+        />
       </Grid>
-      <TextField
-        label="Search"
-        variant="outlined"
-      
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        sx={{
-          width: '100%',
-          '& .MuiOutlinedInput-root': {
-            '& fieldset': {
-              border: 'none',
-            },
-            '&:hover fieldset': {
-              border: 'none',
-            },
-            '&.Mui-focused fieldset': {
-              border: 'none',
-            },
+
+      {/* Pending Requests */}
+      <Grid item xs={12} sm={3}>
+        <StatisticCard 
+          title="Pending Request" 
+          value={pendingCount} 
+          icon={<FaClock />} 
+          color="#f39c12" // Orange
+        />
+      </Grid>
+
+      {/* On Process Requests */}
+      <Grid item xs={12} sm={3}>
+        <StatisticCard 
+          title="On Process Request" 
+          value={processingCount} 
+          icon={<FaCog />} 
+          color="#3498db" // Blue
+        />
+      </Grid>
+
+      {/* Ready to Claim Requests */}
+      <Grid item xs={12} sm={3}>
+        <StatisticCard 
+          title="Ready to Claim" 
+          value={readyCount} 
+          icon={<FaClipboardCheck />} 
+          color="#9b59b6" // Purple
+        />
+      </Grid>
+      </Grid>
+
+    <TextField
+      variant="outlined"
+      placeholder="Search..."
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      fullWidth
+      InputProps={{
+        startAdornment: (
+          <InputAdornment position="start">
+            <Search style={{ color: "#888" }} />
+          </InputAdornment>
+        ),
+        sx: {
+          borderRadius: "8px",
+          backgroundColor: "#f9f9f9",
+          "&:hover": {
+            backgroundColor: "#f3f3f3",
           },
-        }}
-      />
+          "&.Mui-focused": {
+            backgroundColor: "#fff",
+            border: "1px solid #1976d2",
+          },
+      
+        },
+        marginBottom:"20 px",
+      }}
+    />
 
 
       <TableContainer component={Paper}>
         <Table>
-          <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
+          <TableHead sx={{ backgroundColor: '#f5f5f5', marginTop:'10px' }}>
             <TableRow>
               <TableCell align="center">Transaction ID</TableCell>
               <TableCell align="center">Resident ID</TableCell>

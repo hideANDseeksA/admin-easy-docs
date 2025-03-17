@@ -181,32 +181,25 @@ const CertificateRequestLogs = () => {
       </Grid>
 
       {/* Search and Delete Actions */}
-      <Toolbar sx={{ justifyContent: 'space-between', paddingLeft: 0, paddingRight: 0 }}>
+      <Toolbar sx={{ justifyContent: 'space-between', }}>
         <TextField
           label="Search"
           variant="outlined"
+          fullWidth
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           sx={{
             width: '90%',
-            '& .MuiOutlinedInput-root': {
-              '& fieldset': {
-                border: 'none',
-              },
-              '&:hover fieldset': {
-                border: 'none',
-              },
-              '&.Mui-focused fieldset': {
-                border: 'none',
-              },
-            },
+            height: '50px',
+            marginBottom: '15px',
+
           }}
         />
 
         <Tooltip title="Delete All">
           <span>
-            <Button 
-            sx={{ marginBottom: '10px'}}
+            <Button
+              sx={{ marginBottom: '10px' }}
               color="error"
               onClick={confirmDelete} // Trigger confirmation dialog
               disabled={certificateRequests.length === 0 || loading}
@@ -215,7 +208,7 @@ const CertificateRequestLogs = () => {
             </Button>
           </span>
         </Tooltip>
-        
+
       </Toolbar>
 
       <TableContainer component={Paper} className={classes.tableContainer}>

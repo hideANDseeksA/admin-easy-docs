@@ -257,7 +257,7 @@ const CertificateGenerator = () => {
         sx={{
           width: '100%',
           marginBottom: '10px',
-          '& .MuiOutlinedInput-root': { '& fieldset': { border: 'none' } }
+         
         }}
       />
 

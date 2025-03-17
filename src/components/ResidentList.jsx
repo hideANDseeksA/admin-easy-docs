@@ -170,7 +170,7 @@ const ResidentList = () => {
         `<input id="swal-input9" class="swal2-input" placeholder="Birthplace" value="${residentData.birthplace}" style="width: 100%;">` +
         `<input id="swal-input10" class="swal2-input" placeholder="Birthday" value="${residentData.birthday}" style="width: 100%;">` +
         `</div>`,
-        width:"750px",
+      width: "750px",
       focusConfirm: false,
       preConfirm: () => {
         return {
@@ -316,14 +316,7 @@ const ResidentList = () => {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className={classes.searchField}
-          sx={{ 
-              backgroundColor: "transparent",
-            "& .MuiOutlinedInput-root": {
-              "& fieldset": {
-                border: "none",
-              },
-            },
-          }}
+         
         />
         <FormControl className={classes.filterControl}>
           <InputLabel>Age Range</InputLabel>
@@ -377,43 +370,43 @@ const ResidentList = () => {
       </div>
 
       {/* Residents Table */}
- 
-                  <TableContainer component={Paper} className={classes.tableContainer}>
-                    <Table stickyHeader>
-                      <TableHead className={classes.tableHead}>
+
+      <TableContainer component={Paper} className={classes.tableContainer}>
+        <Table stickyHeader>
+          <TableHead className={classes.tableHead}>
             <TableRow>
-              <TableCell  className={classes.tableCell}>Resident ID</TableCell>
-              <TableCell  className={classes.tableCell}>First Name</TableCell>
-              <TableCell  className={classes.tableCell}>Middle Name</TableCell>
-              <TableCell  className={classes.tableCell}>Last Name</TableCell>
-              <TableCell  className={classes.tableCell}>Suffix</TableCell>
-              <TableCell  className={classes.tableCell} onClick={() => handleSort("age")}>Age</TableCell>
-              <TableCell  className={classes.tableCell} onClick={() => handleSort("address")}>Purok</TableCell>
-              <TableCell  className={classes.tableCell} onClick={() => handleSort("sex")}>Sex</TableCell>
-              <TableCell  className={classes.tableCell}>Status</TableCell>
-              <TableCell  className={classes.tableCell}>Birthplace</TableCell>
-              <TableCell  className={classes.tableCell}>Birthday</TableCell>
-              <TableCell  className={classes.tableCell}>Date Added</TableCell>
-              <TableCell  className={classes.tableCell}>Actions</TableCell>
+              <TableCell className={classes.tableCell}>Resident ID</TableCell>
+              <TableCell className={classes.tableCell}>First Name</TableCell>
+              <TableCell className={classes.tableCell}>Middle Name</TableCell>
+              <TableCell className={classes.tableCell}>Last Name</TableCell>
+              <TableCell className={classes.tableCell}>Suffix</TableCell>
+              <TableCell className={classes.tableCell} onClick={() => handleSort("age")}>Age</TableCell>
+              <TableCell className={classes.tableCell} onClick={() => handleSort("address")}>Purok</TableCell>
+              <TableCell className={classes.tableCell} onClick={() => handleSort("sex")}>Sex</TableCell>
+              <TableCell className={classes.tableCell}>Status</TableCell>
+              <TableCell className={classes.tableCell}>Birthplace</TableCell>
+              <TableCell className={classes.tableCell}>Birthday</TableCell>
+              <TableCell className={classes.tableCell}>Date Added</TableCell>
+              <TableCell className={classes.tableCell}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {sortedResidents.length > 0 ? (
               sortedResidents.map((resident) => (
-                <TableRow  className={classes.tableCell} key={resident.resident_id}>
-                  <TableCell  className={classes.tableCell}>{resident.resident_id}</TableCell>
-                  <TableCell  className={classes.tableCell}>{resident.first_name}</TableCell>
-                  <TableCell  className={classes.tableCell}>{resident.middle_name}</TableCell>
-                  <TableCell  className={classes.tableCell}>{resident.last_name}</TableCell>
-                  <TableCell  className={classes.tableCell}>{resident.extension_name ? resident.extension_name : "N/A"}</TableCell>
-                  <TableCell  className={classes.tableCell}>{resident.age}</TableCell>
-                  <TableCell  className={classes.tableCell}>{resident.address}</TableCell>
-                  <TableCell  className={classes.tableCell}>{resident.sex}</TableCell>
-                  <TableCell  className={classes.tableCell}>{resident.status}</TableCell>
-                  <TableCell  className={classes.tableCell}>{resident.birthplace}</TableCell>
-                  <TableCell  className={classes.tableCell}>{resident.birthday}</TableCell>
-                  <TableCell  className={classes.tableCell}>{resident.date_added}</TableCell>
-                  <TableCell  className={classes.tableCell}>
+                <TableRow className={classes.tableCell} key={resident.resident_id}>
+                  <TableCell className={classes.tableCell}>{resident.resident_id}</TableCell>
+                  <TableCell className={classes.tableCell}>{resident.first_name}</TableCell>
+                  <TableCell className={classes.tableCell}>{resident.middle_name}</TableCell>
+                  <TableCell className={classes.tableCell}>{resident.last_name}</TableCell>
+                  <TableCell className={classes.tableCell}>{resident.extension_name ? resident.extension_name : "N/A"}</TableCell>
+                  <TableCell className={classes.tableCell}>{resident.age}</TableCell>
+                  <TableCell className={classes.tableCell}>{resident.address}</TableCell>
+                  <TableCell className={classes.tableCell}>{resident.sex}</TableCell>
+                  <TableCell className={classes.tableCell}>{resident.status}</TableCell>
+                  <TableCell className={classes.tableCell}>{resident.birthplace}</TableCell>
+                  <TableCell className={classes.tableCell}>{resident.birthday}</TableCell>
+                  <TableCell className={classes.tableCell}>{resident.date_added}</TableCell>
+                  <TableCell className={classes.tableCell}>
                     <Button color="error" onClick={() => deleteResident(resident.resident_id)} className="delete-button">
                       Delete
                     </Button>

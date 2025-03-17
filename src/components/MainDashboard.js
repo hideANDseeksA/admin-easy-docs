@@ -34,21 +34,21 @@ import { auth } from '../firebase';
 
 // Import your components
 import Home from './Certificate_Generator';
-import BookHistory from './Requested_Certificate_logs';
+import TransactionLogs from './Requested_Certificate_logs';
 
-import ResearchList from './ResidentList';
-import AddReseach from './AddResisdent';
+import ResidentList from './ResidentList';
+import AddResisdent from './AddResident';
 import CreateNewFolderIcon from '@mui/icons-material/CreateNewFolder';
 import FolderCopyIcon from '@mui/icons-material/FolderCopy';
-import ReturnBook from './Requested_Certification';
-import BorrowedBook from './Certificate_Generator';
+import CurrentRequest from './Requested_Certification';
+import CertifcateGenerator from './Certificate_Generator';
 
 const drawerWidth = 250;
 
 const MainDashboard = () => {
   const [open, setOpen] = useState(false);
-  const [booksOpen, setBooksOpen] = useState(false);
-  const [researchOpen, setResearchOpen] = useState(false);
+  const [transactionOpen, settransactionOpen] = useState(false);
+  const [residentOpen, setresidentOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
 
   const toggleDrawer = () => {
@@ -56,14 +56,14 @@ const MainDashboard = () => {
   };
 
   const handleBooksClick = () => {
-    setBooksOpen(!booksOpen);
+    settransactionOpen(!transactionOpen);
   };
   const handleReportsClick = () => {
     setReportOpen(!reportOpen);
   };
 
   const handleResearchClick = () => {
-    setResearchOpen(!researchOpen);
+    setresidentOpen(!residentOpen);
   };
 
   const handleSignOut = () => {
@@ -148,14 +148,14 @@ const MainDashboard = () => {
               <ListItem button onClick={handleBooksClick}>
                 <ListItemIcon><BookIcon /></ListItemIcon>
                 <ListItemText primary="Transaction" />
-                {booksOpen ? <ExpandLess /> : <ExpandMore />}
+                {transactionOpen ? <ExpandLess /> : <ExpandMore />}
               </ListItem>
-              <Collapse in={booksOpen} timeout="auto" unmountOnExit>
+              <Collapse in={transactionOpen} timeout="auto" unmountOnExit>
                 <List component="div" disablePadding>
                   <ListItem
                     button
                     component={Link}
-                    to="/books/returned"
+                    to="/Transaction/current"
                     onClick={toggleDrawer}
                     sx={{ pl: 4 }}
                   >
@@ -165,7 +165,7 @@ const MainDashboard = () => {
                   <ListItem
                     button
                     component={Link}
-                    to="/books/borrowed"
+                    to="/Transaction/approved"
                     onClick={toggleDrawer}
                     sx={{ pl: 4 }}
                   >
@@ -181,14 +181,14 @@ const MainDashboard = () => {
               <ListItem button onClick={handleResearchClick}>
                 <ListItemIcon><FolderIcon /></ListItemIcon>
                 <ListItemText primary="Residents Records" />
-                {researchOpen ? <ExpandLess /> : <ExpandMore />}
+                {residentOpen ? <ExpandLess /> : <ExpandMore />}
               </ListItem>
-              <Collapse in={researchOpen} timeout="auto" unmountOnExit>
+              <Collapse in={residentOpen} timeout="auto" unmountOnExit>
                 <List component="div" disablePadding>
                   <ListItem
                     button
                     component={Link}
-                    to="/research repository/list"
+                    to="/Residents Records/list"
                     onClick={toggleDrawer}
                     sx={{ pl: 4 }}>
                     <ListItemIcon><FolderCopyIcon /></ListItemIcon>
@@ -197,7 +197,7 @@ const MainDashboard = () => {
                   <ListItem
                     button
                     component={Link}
-                    to="/research repository/add"
+                    to="/Residents Records/add"
                     onClick={toggleDrawer}
                     sx={{ pl: 4 }}>
                     <ListItemIcon><CreateNewFolderIcon /></ListItemIcon>
@@ -266,22 +266,22 @@ const MainDashboard = () => {
             <Route path="/" element={<Home />} />
           
             {/* Nested Routes for Books */}
-            <Route path="/books">
-              <Route path="returned" element={<ReturnBook />} />
-              <Route path="borrowed" element={<BorrowedBook />} />
+            <Route path="/Transaction">
+              <Route path="current" element={<CurrentRequest />} />
+              <Route path="approved" element={<CertifcateGenerator />} />
             </Route>
 
          
 
-            <Route path="/research repository">
-              <Route path="list" element={<ResearchList />} />
-              <Route path="add" element={<AddReseach />} />
+            <Route path="/Residents Records">
+              <Route path="list" element={<ResidentList />} />
+              <Route path="add" element={<AddResisdent />} />
           
             </Route>
 
 
             <Route path="/reports">
-              <Route path="logs" element={<BookHistory />} />
+              <Route path="logs" element={<TransactionLogs />} />
             </Route>
 
 
