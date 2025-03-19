@@ -33,7 +33,7 @@ import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 
 // Import your components
-import Home from './Certificate_Generator';
+import Home from './Home';
 import TransactionLogs from './Requested_Certificate_logs';
 
 import ResidentList from './ResidentList';
