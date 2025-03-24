@@ -146,7 +146,7 @@ const CertificateRequestTable = () => {
       return; // Prevent further processing
     }
   
-    const actionMessage = actionType === 'Approved' ? 'approve' : actionType === 'Ready to Claim' ? 'mark as ready to claim' : actionType === 'Completed' ? 'complete' : 'cancel';
+    const actionMessage = actionType === 'Approved' ? 'approve' : actionType === 'Ready to Claim' ? 'mark as ready to claim' : actionType === 'Completed' ? 'complete' : 'Rejecte';
     const result = await Swal.fire({
       title: `Are you sure you want to ${actionMessage} this request?`,
       showCancelButton: true,
@@ -192,18 +192,22 @@ const CertificateRequestTable = () => {
           setFilteredRequests(prevRequests => prevRequests.filter(req => req.transaction_id !== selectedRequest.transaction_id));
         }
   
-        if (actionType === 'Approved' || actionType === 'cancel') {
-          // Send email notification
+        if (actionType === 'Approved' || actionType === 'Reject') {
           await fetch('https://bned-backend.onrender.com/send-notification', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               email: selectedRequest.resident_email,
               requestId: selectedRequest.transaction_id,
-              status: actionType
-            })
+              status: actionType === 'Approved' ? "Ready To Claim" : "Rejected",
+              message:
+                actionType === "Approved"
+                  ? `We would like to inform you that your ${selectedRequest.certificate_type} has been approved. Please wait for further updates on your request.`
+                  : `We regret to inform you that your ${selectedRequest.certificate_type} request has been rejected. Please contact the admin for more information why your request has been rejected.`,
+            }),
           });
         }
+        
   
         Swal.fire({
           icon: 'success',
@@ -339,7 +343,7 @@ const CertificateRequestTable = () => {
                     <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
                       <MenuItem onClick={() => handleAction('Approved')}>Approve</MenuItem>
                       <MenuItem onClick={() => handleAction('Completed')}>Completed</MenuItem>
-                      <MenuItem onClick={() => handleAction('Cancelled')}>Reject</MenuItem>
+                      <MenuItem onClick={() => handleAction('Reject')}>Reject</MenuItem>
                     </Menu>
                   </TableCell>
                 </TableRow>

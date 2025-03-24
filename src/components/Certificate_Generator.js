@@ -117,6 +117,16 @@ const CertificateGenerator = () => {
   
           // Now, generate the certificate
           generateCertificate(transaction.certificate_details);
+          await fetch('https://bned-backend.onrender.com/send-notification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: transaction.resident_email,
+              requestId: transaction.transaction_id,
+              status: "Ready To Claim",
+              message:"We would like to inform you that your " + transaction.certificate_type +"  is now on process. Please wait for until we finished processing the certificate you have been requested"
+            })
+          });
           
         } catch (error) {
           console.error("Error updating status:", error);
@@ -161,8 +171,21 @@ const CertificateGenerator = () => {
         if (!response.ok) {
           throw new Error('Failed to update transaction');
         }
+
+
+        await fetch('https://bned-backend.onrender.com/send-notification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: transaction.resident_email,
+            requestId: transaction.transaction_id,
+            status: "Ready To Claim",
+            message:"We would like to inform you that your " + transaction.certificate_type +"  is now ready to claim. You can now claim your certificate at the Barangay hall."
+          })
+        });
   
         await fetchData(); // Refresh transactions
+    
   
         Swal.fire({
           icon: 'success',
@@ -170,6 +193,8 @@ const CertificateGenerator = () => {
           text: `The request has been marked as "${actionType}".`,
           timer: 2000,
           showConfirmButton: false
+
+          
         });
       } catch (error) {
         console.error('Error updating transaction:', error);
@@ -233,6 +258,8 @@ const CertificateGenerator = () => {
       alert("Error: " + error.message);
     }
   };
+
+  
   
   useEffect(() => {
     fetchData();

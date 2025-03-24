@@ -1,26 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import {
-    Grid, Box, Card, Typography
+    Grid, Box, Card, Typography, 
 } from '@mui/material';
 import Swal from 'sweetalert2';
 import { FaCheckCircle, FaClock, FaCog, FaClipboardCheck } from "react-icons/fa";
 import StatisticCard from "./statisticcard";
-import { BarChart } from '@mui/x-charts/BarChart';
-import { axisClasses } from '@mui/x-charts/ChartsAxis';
-import { dataset, valueFormatter } from './weather';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { desktopOS, valueFormatters } from './data';
 import HomeIcon from '@mui/icons-material/Home';
+import TransactionChart from './chat'; 
 
 const Home = () => {
     const [certificateRequests, setCertificateRequests] = useState([]);
-    // eslint-disable-next-line no-unused-vars
-    const [filteredRequests, setFilteredRequests] = useState([]);
-    // eslint-disable-next-line no-unused-vars
-    const [searchQuery, setSearchQuery] = useState('');
+ 
 
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchCertificateRequests = async () => {
             try {
                 Swal.fire({
                     title: 'Loading...',
@@ -32,7 +27,6 @@ const Home = () => {
                 const response = await fetch('https://bned-backend.onrender.com/api/get_transaction');
                 const data = await response.json();
                 setCertificateRequests(data.transactions);
-                setFilteredRequests(data.transactions);
                 Swal.close();
             } catch (error) {
                 Swal.close();
@@ -45,38 +39,25 @@ const Home = () => {
             }
         };
 
-        fetchData();
-        const intervalId = setInterval(fetchData, 120000);
+    
+
+        const intervalId = setInterval(() => {
+            fetchCertificateRequests();
+       
+        }, 120000);
+
         return () => clearInterval(intervalId);
     }, []);
-
-    useEffect(() => {
-        const filtered = certificateRequests.filter(request =>
-            request.transaction_id.toString().includes(searchQuery) ||
-            request.resident_id.toString().includes(searchQuery) ||
-            request.resident_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            request.certificate_type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            request.status.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-        setFilteredRequests(filtered);
-    }, [searchQuery, certificateRequests]);
 
     const approveCount = certificateRequests.filter(req => req.status === 'Approved').length;
     const pendingCount = certificateRequests.filter(req => req.status === 'Pending').length;
     const processingCount = certificateRequests.filter(req => req.status === 'On Process').length;
     const readyCount = certificateRequests.filter(req => req.status === 'Ready To Claim').length;
 
-    const chartSetting = {
-        yAxis: [{ label: 'Number of Request', margin: '10px' }],
-        height: 300,
-        sx: {
-            [`.${axisClasses.left} .${axisClasses.label}`]: { transform: 'translate(-10px, 0)' },
-            [`.${axisClasses.left}`]: { marginLeft: '20px' },
-        },
-    };
+ 
 
     return (
-        <Box sx={{ padding: '20px', backgroundColor: '#ffffff', height: '500px', width: '100%' }}>
+        <Box sx={{ padding: '20px', backgroundColor: '#ffffff', height: 'auto', width: '100%' }}>
             <Typography variant="h4" gutterBottom>Welcome Back</Typography>
             <Grid container spacing={2} alignItems="center" justifyContent="flex-start" sx={{ marginBottom: "20px" }}>
                 <Grid item xs={12} sm="auto">
@@ -121,18 +102,8 @@ const Home = () => {
             </Grid>
 
             <Card sx={{ padding: '20px', marginTop: '20px' }}>
-                <Typography variant="h6" gutterBottom>Certification Overview Over Months</Typography>
-                <BarChart
-                    dataset={dataset}
-                    xAxis={[{ scaleType: 'band', dataKey: 'month' }]}
-                    series={[
-                        { dataKey: 'london', label: 'Completed', valueFormatter },
-                        { dataKey: 'paris', label: 'Cancelled', valueFormatter },
-                        { dataKey: 'newYork', label: 'Rejected', valueFormatter },
-                    ]}
-                    {...chartSetting}
-                    sx={{ width: '100%' }}
-                />
+                <Typography variant="h6" gutterBottom>Certification Overview</Typography>
+                <TransactionChart /> 
             </Card>
         </Box>
     );

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import * as XLSX from "xlsx"; // Import XLSX
+import EditResidentModal from "./EditResidentModal";
 import { FaUsers, FaMale, FaFemale } from "react-icons/fa";
 import {
   Typography,
@@ -154,85 +155,13 @@ const ResidentList = () => {
     });
   };
 
-  const editResident = async (residentId, residentData) => {
-    const { value: formValues } = await Swal.fire({
-      title: 'Edit Resident',
-      html:
-        `<div style="display: grid; column-gap: 20px; row-gap: 10px; grid-template-columns: repeat(2, 1fr); width: 600px;">` +
-        `<input id="swal-input1" class="swal2-input" placeholder="First Name" value="${residentData.first_name}" style="width: 100%;">` +
-        `<input id="swal-input2" class="swal2-input" placeholder="Middle Name" value="${residentData.middle_name}" style="width: 100%;">` +
-        `<input id="swal-input3" class="swal2-input" placeholder="Last Name" value="${residentData.last_name}" style="width: 100%;">` +
-        `<input id="swal-input4" class="swal2-input" placeholder="Extension Name" value="${residentData.extension_name || ''}" style="width: 100%;">` +
-        `<input id="swal-input5" class="swal2-input" placeholder="Age" value="${residentData.age}" style="width: 100%;">` +
-        `<input id="swal-input6" class="swal2-input" placeholder="Address" value="${residentData.address}" style="width: 100%;">` +
-        `<input id="swal-input7" class="swal2-input" placeholder="Sex" value="${residentData.sex}" style="width: 100%;">` +
-        `<input id="swal-input8" class="swal2-input" placeholder="Status" value="${residentData.status}" style="width: 100%;">` +
-        `<input id="swal-input9" class="swal2-input" placeholder="Birthplace" value="${residentData.birthplace}" style="width: 100%;">` +
-        `<input id="swal-input10" class="swal2-input" placeholder="Birthday" value="${residentData.birthday}" style="width: 100%;">` +
-        `</div>`,
-      width: "750px",
-      focusConfirm: false,
-      preConfirm: () => {
-        return {
-          first_name: document.getElementById('swal-input1').value,
-          middle_name: document.getElementById('swal-input2').value,
-          last_name: document.getElementById('swal-input3').value,
-          extension_name: document.getElementById('swal-input4').value,
-          age: document.getElementById('swal-input5').value,
-          address: document.getElementById('swal-input6').value,
-          sex: document.getElementById('swal-input7').value,
-          status: document.getElementById('swal-input8').value,
-          birthplace: document.getElementById('swal-input9').value,
-          birthday: document.getElementById('swal-input10').value,
-        };
-      },
-      showCancelButton: true,
-      confirmButtonText: 'Update',
-      cancelButtonText: 'Cancel',
-      customClass: {
-        popup: 'edit-resident-popup',
-        confirmButton: 'edit-resident-confirm-button',
-        cancelButton: 'edit-resident-cancel-button'
-      }
-    });
 
-    if (formValues) {
-      const confirmUpdate = await Swal.fire({
-        title: "Are you sure?",
-        text: "Do you want to update this resident's information?",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, update it!",
-        cancelButtonText: "Cancel",
-      });
+  const [open, setOpen] = useState(false);
+  const [selectedResident, setSelectedResident] = useState(null);
 
-      if (confirmUpdate.isConfirmed) {
-        Swal.fire({
-          title: "Updating...",
-          text: "Please wait while the resident's information is being updated.",
-          allowOutsideClick: false,
-          didOpen: () => {
-            Swal.showLoading();
-          },
-        });
-
-        try {
-          await axios.put(`https://bned-backend.onrender.com/api/update_resident/${residentId}`, formValues);
-          fetchResidents();
-          Swal.close();
-          Swal.fire("Updated!", "The resident's information has been updated.", "success");
-        } catch (error) {
-          console.error("Error updating resident:", error);
-          Swal.fire({
-            icon: "error",
-            title: "Oops...",
-            text: "Something went wrong while updating the resident!",
-          });
-        }
-      }
-    }
+  const handleEditClick = (residents) => {
+    setSelectedResident(residents);
+    setOpen(true);
   };
 
   // Download Excel Function
@@ -316,7 +245,7 @@ const ResidentList = () => {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className={classes.searchField}
-         
+
         />
         <FormControl className={classes.filterControl}>
           <InputLabel>Age Range</InputLabel>
@@ -410,7 +339,7 @@ const ResidentList = () => {
                     <Button color="error" onClick={() => deleteResident(resident.resident_id)} className="delete-button">
                       Delete
                     </Button>
-                    <Button onClick={() => editResident(resident.resident_id, resident)} className="edit-button">
+                    <Button onClick={() => handleEditClick(resident)} className="edit-button">
                       Edit
                     </Button>
                   </TableCell>
@@ -424,6 +353,12 @@ const ResidentList = () => {
           </TableBody>
         </Table>
       </TableContainer>
+      <EditResidentModal
+        open={open}
+        handleClose={() => setOpen(false)}
+        resident={selectedResident}
+        fetchResidents={fetchResidents}
+      />
     </Box>
   );
 };
