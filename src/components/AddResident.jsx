@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState} from "react";
 import * as XLSX from "xlsx";
 import axios from "axios";
-import Swal from "sweetalert2";
+import useSwalTheme from '../utils/useSwalTheme';
 import {
   Button,
   MenuItem,
@@ -24,6 +24,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from "dayjs";  // Import Dayjs for date formatting
 import { styled } from '@mui/material/styles';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import { API_URL,headername,keypoint } from '../utils/config';
 
 const CreateResident = () => {
   const [resident, setResident] = useState({
@@ -36,11 +37,17 @@ const CreateResident = () => {
     sex: "",
     status: "",
     birthplace: "",
-    birthday: ""
+    birthday: "",
+    vote: "",
+    sector: "",
   });
+
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+  const SwalInstance = useSwalTheme();
+
+
 
   const VisuallyHiddenInput = styled('input')({
     clip: 'rect(0 0 0 0)',
@@ -65,7 +72,7 @@ const CreateResident = () => {
     const selectedFile = event.target.files[0];
     if (selectedFile) {
       setFile(selectedFile);
-      Swal.fire({
+      SwalInstance.fire({
         title: "File Selected",
         text: `You have selected: ${selectedFile.name}`,
         icon: "info",
@@ -76,11 +83,26 @@ const CreateResident = () => {
 
   const handleUpload = async () => {
     if (!file) {
-      Swal.fire("Error", "Please select an Excel file first.", "error");
+      SwalInstance.fire("Error", "Please select an Excel file first.", "error");
       return;
     }
 
-    const result = await Swal.fire({
+
+    if (!navigator.onLine) {
+      SwalInstance.fire({
+        icon: 'error',
+        title: 'No Internet',
+        text: 'You are currently offline. Please check your connection.',
+        toast: true,
+        timer: 3000,
+        position: 'top-end',
+        showConfirmButton: false,
+      });
+      return;
+    }
+
+
+    const result = await SwalInstance.fire({
       title: 'Are you sure?',
       text: "Do you want to upload this file?",
       icon: 'warning',
@@ -93,12 +115,12 @@ const CreateResident = () => {
       return;
     }
 
-    Swal.fire({
+    SwalInstance.fire({
       title: 'Uploading...',
       text: 'Please wait while the file is being uploaded.',
       allowOutsideClick: false,
       didOpen: () => {
-        Swal.showLoading();
+        SwalInstance.showLoading();
       }
     });
 
@@ -119,20 +141,26 @@ const CreateResident = () => {
         }));
 
         console.log("Parsed Data:", jsonData);
-        const response = await axios.post("https://bned-backend.onrender.com/api/create_residents", {
+        const response = await axios.post(`${API_URL}/api/residents/bulk/create`, {
+
           residents: jsonData,
-        });
-        Swal.fire("Success", response.data, "success");
+        }, {
+          headers: {
+            [headername]:keypoint,
+          },
+        }
+        );
+        SwalInstance.fire("Success", response.data, "success");
       } catch (error) {
         console.error("Error uploading residents:", error);
-        Swal.fire("Error", "Error uploading residents.", "error");
+        SwalInstance.fire("Error", "Error uploading residents.", "error");
       } finally {
         setLoading(false);
       }
     };
 
     reader.onerror = () => {
-      Swal.fire("Error", "Failed to read the file.", "error");
+      SwalInstance.fire("Error", "Failed to read the file.", "error");
       setLoading(false);
     };
 
@@ -141,11 +169,23 @@ const CreateResident = () => {
 
   const handleUpdate = async () => {
     if (!file) {
-      Swal.fire("Error", "Please select an Excel file first.", "error");
+      SwalInstance.fire("Error", "Please select an Excel file first.", "error");
+      return;
+    }
+    if (!navigator.onLine) {
+      SwalInstance.fire({
+        icon: 'error',
+        title: 'No Internet',
+        text: 'You are currently offline. Please check your connection.',
+        toast: true,
+        timer: 3000,
+        position: 'top-end',
+        showConfirmButton: false,
+      });
       return;
     }
 
-    const result = await Swal.fire({
+    const result = await SwalInstance.fire({
       title: 'Are you sure?',
       text: "Do you want to update with this file?",
       icon: 'warning',
@@ -158,12 +198,12 @@ const CreateResident = () => {
       return;
     }
 
-    Swal.fire({
+    SwalInstance.fire({
       title: 'Updating...',
       text: 'Please wait while the file is being updated.',
       allowOutsideClick: false,
       didOpen: () => {
-        Swal.showLoading();
+        SwalInstance.showLoading();
       }
     });
 
@@ -184,21 +224,24 @@ const CreateResident = () => {
         }));
 
         console.log("Parsed Data:", jsonData);
-        await axios.put("https://bned-backend.onrender.com/api/update_residents", {
-          residents: jsonData,
-        });
+        await axios.put(`${API_URL}/api/residents/bulk/update`, {
+          residents: jsonData, },{
+         
+            headers: {
+              [headername]:keypoint
+      }});
 
-        Swal.fire("Success", "Update successful!", "success");
+        SwalInstance.fire("Success", "Update successful!", "success");
       } catch (error) {
         console.error("Error updating residents:", error);
-        Swal.fire("Error", "Error updating residents.", "error");
+        SwalInstance.fire("Error", "Error updating residents.", "error");
       } finally {
         setLoading(false);
       }
     };
 
     reader.onerror = () => {
-      Swal.fire("Error", "Failed to read the file.", "error");
+      SwalInstance.fire("Error", "Failed to read the file.", "error");
       setLoading(false);
     };
 
@@ -212,7 +255,20 @@ const CreateResident = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const result = await Swal.fire({
+    if (!navigator.onLine) {
+      SwalInstance.fire({
+        icon: 'error',
+        title: 'No Internet',
+        text: 'You are currently offline. Please check your connection.',
+        toast: true,
+        timer: 3000,
+        position: 'top-end',
+        showConfirmButton: false,
+      });
+      return;
+    }
+
+    const result = await SwalInstance.fire({
       title: 'Are you sure?',
       text: "Do you want to create this resident?",
       icon: 'warning',
@@ -227,11 +283,15 @@ const CreateResident = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post("https://bned-backend.onrender.com/api/create_resident", resident);
-      Swal.fire("Success", response.data, "success");
+      const response = await axios.post(`${API_URL}/api/residents/create`, resident, {
+        headers: {
+         [headername]:keypoint
+        },
+      });
+      SwalInstance.fire("Success", response.data, "success");
     } catch (error) {
       console.error("Error adding resident:", error);
-      Swal.fire("Error", "Failed to add resident.", "error");
+      SwalInstance.fire("Error", "Failed to add resident.", "error");
     } finally {
       setLoading(false);
     }
@@ -284,6 +344,7 @@ const CreateResident = () => {
                 name="extension_name"
                 value={resident.extension_name}
                 onChange={handleChange}
+                required
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -360,17 +421,41 @@ const CreateResident = () => {
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-  <LocalizationProvider dateAdapter={AdapterDayjs}>
-    <DatePicker
-      label="Birthday"
-      name="birthday"
-      value={resident.birthday ? dayjs(resident.birthday) : null}
-      onChange={(newValue) => handleChange({ target: { name: 'birthday', value: newValue ? newValue.format("YYYY-MM-DD") : '' } })}
-      format="YYYY-MM-DD"
-      slotProps={{ textField: { fullWidth: true, required: true } }}
-    />
-  </LocalizationProvider>
-</Grid>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  label="Birthday"
+                  name="birthday"
+                  value={resident.birthday ? dayjs(resident.birthday) : null}
+                  onChange={(newValue) => handleChange({ target: { name: 'birthday', value: newValue ? newValue.format("YYYY-MM-DD") : '' } })}
+                  format="YYYY-MM-DD"
+                  slotProps={{ textField: { fullWidth: true, required: true } }}
+                />
+              </LocalizationProvider>
+            </Grid>
+
+           <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Vulnerable Sector"
+                name="sector"
+                value={resident.sector}
+                onChange={handleChange}
+                required 
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth required>
+                <InputLabel>Voting Status</InputLabel>
+                <Select
+                  name="vote"
+                  value={resident.vote}
+                  onChange={handleChange}
+                >
+                  <MenuItem value="ACTIVE">ACTIVE</MenuItem>
+                  <MenuItem value="NOT ACTIVE">NOT ACTIVE</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
 
             <Grid item xs={12}>
               <Button type="submit" variant="contained" color="primary" fullWidth disabled={loading}>
@@ -382,54 +467,54 @@ const CreateResident = () => {
       </Paper>
 
       <Paper elevation={3} sx={{ p: 4, mt: 4, textAlign: "center", borderRadius: 3 }}>
-      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>
-        Upload Residents Excel File
-      </Typography>
+        <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>
+          Upload Residents Excel File
+        </Typography>
 
-      <Stack direction="column" alignItems="center" spacing={2}>
-        {/* Upload Button */}
-        <Button
-          component="label"
-          variant="contained"
-          color="primary"
-          startIcon={<CloudUploadIcon />}
-          sx={{
-            px: 3, py: 1.5,
-            fontSize: "1rem",
-            borderRadius: "25px",
-            textTransform: "none",
-            transition: "0.3s",
-            '&:hover': { backgroundColor: '#1565c0' },
-          }}
-        >
-          Upload File
-          <VisuallyHiddenInput type="file" accept=".xlsx, .xls" onChange={handleFileChange} />
-        </Button>
-
-        {/* Upload Actions */}
-        <Stack direction="row" spacing={2}>
+        <Stack direction="column" alignItems="center" spacing={2}>
+          {/* Upload Button */}
           <Button
-            onClick={handleUpload}
-            disabled={loading}
+            component="label"
             variant="contained"
-            color="success"
-            sx={{ borderRadius: "20px", px: 3 }}
+            color="primary"
+            startIcon={<CloudUploadIcon />}
+            sx={{
+              px: 3, py: 1.5,
+              fontSize: "1rem",
+              borderRadius: "25px",
+              textTransform: "none",
+              transition: "0.3s",
+              '&:hover': { backgroundColor: '#1565c0' },
+            }}
           >
-            {loading ? <CircularProgress size={24} sx={{ color: "white" }} /> : "Upload & Insert"}
+            Upload File
+            <VisuallyHiddenInput type="file" accept=".xlsx, .xls" onChange={handleFileChange} />
           </Button>
 
-          <Button
-            onClick={handleUpdate}
-            disabled={loading}
-            variant="contained"
-            color="secondary"
-            sx={{ borderRadius: "20px", px: 3 }}
-          >
-            {loading ? <CircularProgress size={24} sx={{ color: "white" }} /> : "Upload & Update"}
-          </Button>
+          {/* Upload Actions */}
+          <Stack direction="row" spacing={2}>
+            <Button
+              onClick={handleUpload}
+              disabled={loading}
+              variant="contained"
+              color="success"
+              sx={{ borderRadius: "20px", px: 3 }}
+            >
+              {loading ? <CircularProgress size={24} sx={{ color: "white" }} /> : "Upload & Insert"}
+            </Button>
+
+            <Button
+              onClick={handleUpdate}
+              disabled={loading}
+              variant="contained"
+              color="secondary"
+              sx={{ borderRadius: "20px", px: 3 }}
+            >
+              {loading ? <CircularProgress size={24} sx={{ color: "white" }} /> : "Upload & Update"}
+            </Button>
+          </Stack>
         </Stack>
-      </Stack>
-    </Paper>
+      </Paper>
 
       <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={handleCloseSnackbar}>
         <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>

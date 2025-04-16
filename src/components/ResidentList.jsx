@@ -1,8 +1,14 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import Swal from "sweetalert2";
+import useSwalTheme from '../utils/useSwalTheme';
 import * as XLSX from "xlsx"; // Import XLSX
 import EditResidentModal from "./EditResidentModal";
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+import decrypt from '../utils/aes';
+import SentimentDissatisfiedIcon from '@mui/icons-material/SentimentDissatisfied';
+import HomeIcon from '@mui/icons-material/Diversity3';
+import { API_URL,headername,keypoint } from '../utils/config';
 import { FaUsers, FaMale, FaFemale } from "react-icons/fa";
 import {
   Typography,
@@ -15,16 +21,11 @@ import {
   MenuItem,
   Select,
   InputLabel,
+  IconButton,
   FormControl,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
 } from "@mui/material";
 import { makeStyles } from '@mui/styles';
+import { DataGrid } from '@mui/x-data-grid'; // Import DataGrid
 
 const useStyles = makeStyles({
   tableContainer: {
@@ -69,11 +70,11 @@ const useStyles = makeStyles({
     marginBottom: '16px', // 2 * 8px
   },
   filterControl: {
-    minWidth: 120,
+    flex: 1,
     height: '55px',
   },
   searchField: {
-    flex: 1,
+    flex: 5,
     height: '55px',
   },
   downloadButton: {
@@ -84,41 +85,93 @@ const useStyles = makeStyles({
 const ResidentList = () => {
   const [residents, setResidents] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortCriteria, setSortCriteria] = useState({ key: "", order: "asc" });
   const [ageRange, setAgeRange] = useState("");
   const [sex, setSex] = useState("");
   const [purok, setPurok] = useState("");
+  const SwalInstance = useSwalTheme();
+  const checkInternet = () => {
+    if (!navigator.onLine) {
+      SwalInstance.fire({
+        icon: 'error',
+        title: 'No Internet',
+        text: 'You are currently offline. Please check your connection.',
+        toast: true,
+        timer: 3000,
+        position: 'top-end',
+        showConfirmButton: false,
+      });
+      return false;
+    }
+    return true;
+  };
+
 
   const fetchResidents = async () => {
-    Swal.fire({
+    SwalInstance.fire({
       title: "Loading...",
       text: "Fetching residents, please wait.",
       allowOutsideClick: false,
       didOpen: () => {
-        Swal.showLoading();
+        SwalInstance.showLoading();
       },
     });
 
     try {
-      const response = await axios.get("https://bned-backend.onrender.com/api/get_resident");
-      setResidents(response.data);
-      Swal.close();
+      const response = await axios.get(`${API_URL}/api/residents/get`, {
+        headers: {
+          [headername]:keypoint
+        },
+      });
+
+      if (!response.data || !Array.isArray(response.data)) {
+        throw new Error("Invalid response from server");
+      }
+
+      // 🔑 Decrypt only specific encrypted fields
+      const decryptedResidents = response.data.map(resident => ({
+        resident_id: decrypt(resident.resident_id),
+        first_name: decrypt(resident.first_name), // Decrypt if encrypted
+        middle_name: decrypt(resident.middle_name), // Decrypt if encrypted
+        last_name: decrypt(resident.last_name), // Decrypt if encrypted
+        extension_name: decrypt(resident.extension_name), // Not encrypted
+        age: resident.age, // Not encrypted
+        address: decrypt(resident.address), // Decrypt if encrypted
+        sex: resident.sex === "M" ? "Male" : resident.sex === "F" ? "Female" : resident.sex, // Convert M/F to Male/Female
+        status: decrypt(resident.status), // Decrypt if encrypted
+        birthplace: decrypt(resident.birthplace), // Decrypt if encrypted
+        birthday: new Date(decrypt(resident.birthday)).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+        }), // Format as Jan. 17, 2001
+        vote: resident.voting_status === true ? "ACTIVE" : "NOT ACTIVE",
+        vulnerable_status: decrypt(resident.vulnerable_status),
+        date_added: resident.date_added
+      }));
+
+      setResidents(decryptedResidents);
+      SwalInstance.close();
     } catch (error) {
       console.error("Error fetching residents:", error);
-      Swal.fire({
+      SwalInstance.fire({
         icon: "error",
         title: "Oops...",
-        text: "Something went wrong while fetching the residents!",
+        text: error.message || "Something went wrong while fetching the residents!",
       });
     }
   };
 
   useEffect(() => {
     fetchResidents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+
+
+
   const deleteResident = async (residentId) => {
-    Swal.fire({
+    if (!checkInternet()) return;
+    SwalInstance.fire({
       title: "Are you sure?",
       text: "You won't be able to revert this!",
       icon: "warning",
@@ -129,23 +182,27 @@ const ResidentList = () => {
       cancelButtonText: "Cancel",
     }).then(async (result) => {
       if (result.isConfirmed) {
-        Swal.fire({
+        SwalInstance.fire({
           title: "Deleting...",
           text: "Please wait while the resident is being deleted.",
           allowOutsideClick: false,
           didOpen: () => {
-            Swal.showLoading();
+            SwalInstance.showLoading();
           },
         });
 
         try {
-          await axios.delete(`https://bned-backend.onrender.com/api/delete_residents/${residentId}`);
+          await axios.delete(`${API_URL}/api/residents/delete_residents/${residentId}`, {
+            headers: {
+              [headername]:keypoint
+            }
+          });
           fetchResidents();
-          Swal.close();
-          Swal.fire("Deleted!", "The resident has been removed.", "success");
+          SwalInstance.close();
+          SwalInstance.fire("Deleted!", "The resident has been removed.", "success");
         } catch (error) {
           console.error("Error deleting resident:", error);
-          Swal.fire({
+          SwalInstance.fire({
             icon: "error",
             title: "Oops...",
             text: "Something went wrong while deleting the resident!",
@@ -154,7 +211,6 @@ const ResidentList = () => {
       }
     });
   };
-
 
   const [open, setOpen] = useState(false);
   const [selectedResident, setSelectedResident] = useState(null);
@@ -166,6 +222,7 @@ const ResidentList = () => {
 
   // Download Excel Function
   const downloadExcel = () => {
+    if (!checkInternet()) return;
     const worksheet = XLSX.utils.json_to_sheet(residents);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Residents");
@@ -174,10 +231,7 @@ const ResidentList = () => {
     XLSX.writeFile(workbook, "Barangay_Residents.xlsx");
   };
 
-  // Statistics
-  const totalResidents = residents.length;
-  const maleResidents = residents.filter((r) => r.sex === "M").length;
-  const femaleResidents = residents.filter((r) => r.sex === "F").length;
+
 
   const StatisticCard = ({ title, value, icon }) => (
     <Grid item xs={12} sm={4}>
@@ -197,16 +251,23 @@ const ResidentList = () => {
   const filteredResidents = residents.filter((resident) => {
     const matchesSearchQuery = resident.resident_id.toString().includes(searchQuery) ||
       resident.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      resident.vulnerable_status.toLowerCase().includes(searchQuery.toLowerCase()) ||
       resident.last_name.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesAgeRange = ageRange ? (ageRange === "below_18" ? resident.age < 18 : ageRange === "18_60" ? resident.age >= 18 && resident.age <= 60 : resident.age > 60) : true;
     const matchesSex = sex ? resident.sex === sex : true;
-    const matchesPurok = purok ? resident.address.toLowerCase().includes(purok) : true;
+    const matchesPurok = purok ? resident.address.includes(purok) : true;
 
     return matchesSearchQuery && matchesAgeRange && matchesSex && matchesPurok;
   });
 
+  // Update statistics based on filtered residents
+  const totalResidents = filteredResidents.length;
+  const maleResidents = filteredResidents.filter((r) => r.sex === "Male").length;
+  const femaleResidents = filteredResidents.filter((r) => r.sex === "Female").length;
+
   // Sort residents based on sort criteria
+  const sortCriteria = { key: "resident_id", order: "asc" }; // Example static criteria
   const sortedResidents = [...filteredResidents].sort((a, b) => {
     if (sortCriteria.key) {
       const aValue = a[sortCriteria.key];
@@ -218,18 +279,80 @@ const ResidentList = () => {
     return 0;
   });
 
-  const handleSort = (key) => {
-    setSortCriteria((prev) => ({
-      key,
-      order: prev.key === key && prev.order === "asc" ? "desc" : "asc",
-    }));
-  };
-
   const classes = useStyles();
 
+  const columns = [
+    { field: 'resident_id', headerName: 'Resident ID', width: 150 },
+    { field: 'first_name', headerName: 'First Name', width: 150 },
+    { field: 'middle_name', headerName: 'Middle Name', width: 150 },
+    { field: 'last_name', headerName: 'Last Name', width: 150 },
+    { field: 'extension_name', headerName: 'Suffix', width: 100, },
+    { field: 'age', headerName: 'Age', align: 'center', headerAlign: 'center', width: 100 },
+    { field: 'address', headerName: 'Purok', align: 'center', headerAlign: 'center', width: 100 },
+    { field: 'sex', headerName: 'Sex', align: 'center', headerAlign: 'center', width: 100 },
+    { field: 'status', headerName: 'Status', align: 'center', headerAlign: 'center', width: 150 },
+    { field: 'birthplace', headerName: 'Birthplace', width: 150 },
+    { field: 'birthday', headerName: 'Birthday', width: 150 },
+    {
+      field: 'vote',
+      headerName: 'Voting Status',
+      width: 150, align: 'center', headerAlign: 'center',
+      renderCell: (params) => {
+        const voteStatus = params.row.vote;
+        let backgroundColor = 'transparent';  // Default background color
+
+        // If vote is 'Active', apply a background color
+        if (voteStatus === 'ACTIVE') {
+          backgroundColor = 'green';  // Set the background color for Active vote
+        } else {
+          backgroundColor = 'red';
+        }
+
+        return (
+          <div style={{ backgroundColor, padding: '5px', color: 'white' }}>
+            {voteStatus}
+          </div>
+        );
+      }
+    },
+    { field: 'vulnerable_status', headerName: 'Vulnerable Sector', align: 'center', headerAlign: 'center', width: 150 },
+    { field: 'date_added', headerName: 'Date Added', width: 150 },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 100,
+      renderCell: (params) => (
+        <>
+          <IconButton color="error" onClick={() => deleteResident(params.row.resident_id)} className="delete-button">
+            <DeleteIcon />
+          </IconButton>
+
+          <IconButton onClick={() => handleEditClick(params.row)} className="edit-button">
+            <EditIcon />
+          </IconButton>
+
+        </>
+      ),
+    },
+  ];
+    const CustomNoRowsOverlay = () => (
+      <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+        <SentimentDissatisfiedIcon sx={{ fontSize: 40, color: '#3D4751' }} />
+        <Box sx={{ mt: 2 }}>No Data Available</Box>
+      </Box>
+    );
+
   return (
-    <Box sx={{ padding: '20px', backgroundColor: '#ffffff', height: '500px', width: '100%' }}>
-      <h2 className="section-title">Barangay Residents</h2>
+    <Box sx={{ padding: '20px', height: '500px', width: '100%' }}>
+     <Typography variant="h4" gutterBottom>Barangay Residents</Typography>
+      <Grid container spacing={2} alignItems="center" justifyContent="flex-start" sx={{ marginBottom: "20px" }}>
+        <Grid item xs={12} sm="auto">
+          <Box display="flex" alignItems="center" gap={0.5} sx={{ minHeight: "40px" }}>
+            <HomeIcon fontSize="medium" color="primary" />
+            <Typography variant="subtitle1" fontWeight="bold">Dashboard / Residents List</Typography>
+          </Box>
+        </Grid>
+      </Grid>
 
       <Grid container spacing={2} justifyContent="center" sx={{ marginBottom: "20px" }}>
         <StatisticCard title="Total Residents" value={totalResidents} icon={<FaUsers />} />
@@ -241,11 +364,9 @@ const ResidentList = () => {
       <div className={classes.residentListActions}>
         <TextField
           label="Search residents..."
-
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className={classes.searchField}
-
         />
         <FormControl className={classes.filterControl}>
           <InputLabel>Age Range</InputLabel>
@@ -268,8 +389,8 @@ const ResidentList = () => {
             label="Sex"
           >
             <MenuItem value=""><em>None</em></MenuItem>
-            <MenuItem value="M">Male</MenuItem>
-            <MenuItem value="F">Female</MenuItem>
+            <MenuItem value="Male">Male</MenuItem>
+            <MenuItem value="Female">Female</MenuItem>
           </Select>
         </FormControl>
         <FormControl className={classes.filterControl}>
@@ -285,7 +406,14 @@ const ResidentList = () => {
             <MenuItem value="3">Purok 3</MenuItem>
             <MenuItem value="4">Purok 4</MenuItem>
             <MenuItem value="5">Purok 5</MenuItem>
-            <MenuItem value="6">Purok 6</MenuItem>
+            <MenuItem value="6 A">Purok 6-A</MenuItem>
+            <MenuItem value="6 B">Purok 6-B</MenuItem>
+            <MenuItem value="7 A">Purok 7-A</MenuItem>
+            <MenuItem value="7 B">Purok 7-B</MenuItem>
+            <MenuItem value="8 A">Purok 8-A</MenuItem>
+            <MenuItem value="8 B">Purok 8-B</MenuItem>
+            <MenuItem value="9">Purok 9</MenuItem>
+            <MenuItem value="10">Purok 10</MenuItem>
           </Select>
         </FormControl>
         <Button
@@ -299,60 +427,20 @@ const ResidentList = () => {
       </div>
 
       {/* Residents Table */}
+      <div style={{ height: 400, width: '100%' }}>
+        <DataGrid
+          rows={sortedResidents}
+          columns={columns}
+          pageSize={5}
+          rowsPerPageOptions={[5]}
+          getRowId={(row) => row.resident_id}
+          slots={{
+            noRowsOverlay: CustomNoRowsOverlay,
+          }}
 
-      <TableContainer component={Paper} className={classes.tableContainer}>
-        <Table stickyHeader>
-          <TableHead className={classes.tableHead}>
-            <TableRow>
-              <TableCell className={classes.tableCell}>Resident ID</TableCell>
-              <TableCell className={classes.tableCell}>First Name</TableCell>
-              <TableCell className={classes.tableCell}>Middle Name</TableCell>
-              <TableCell className={classes.tableCell}>Last Name</TableCell>
-              <TableCell className={classes.tableCell}>Suffix</TableCell>
-              <TableCell className={classes.tableCell} onClick={() => handleSort("age")}>Age</TableCell>
-              <TableCell className={classes.tableCell} onClick={() => handleSort("address")}>Purok</TableCell>
-              <TableCell className={classes.tableCell} onClick={() => handleSort("sex")}>Sex</TableCell>
-              <TableCell className={classes.tableCell}>Status</TableCell>
-              <TableCell className={classes.tableCell}>Birthplace</TableCell>
-              <TableCell className={classes.tableCell}>Birthday</TableCell>
-              <TableCell className={classes.tableCell}>Date Added</TableCell>
-              <TableCell className={classes.tableCell}>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {sortedResidents.length > 0 ? (
-              sortedResidents.map((resident) => (
-                <TableRow className={classes.tableCell} key={resident.resident_id}>
-                  <TableCell className={classes.tableCell}>{resident.resident_id}</TableCell>
-                  <TableCell className={classes.tableCell}>{resident.first_name}</TableCell>
-                  <TableCell className={classes.tableCell}>{resident.middle_name}</TableCell>
-                  <TableCell className={classes.tableCell}>{resident.last_name}</TableCell>
-                  <TableCell className={classes.tableCell}>{resident.extension_name ? resident.extension_name : "N/A"}</TableCell>
-                  <TableCell className={classes.tableCell}>{resident.age}</TableCell>
-                  <TableCell className={classes.tableCell}>{resident.address}</TableCell>
-                  <TableCell className={classes.tableCell}>{resident.sex}</TableCell>
-                  <TableCell className={classes.tableCell}>{resident.status}</TableCell>
-                  <TableCell className={classes.tableCell}>{resident.birthplace}</TableCell>
-                  <TableCell className={classes.tableCell}>{resident.birthday}</TableCell>
-                  <TableCell className={classes.tableCell}>{resident.date_added}</TableCell>
-                  <TableCell className={classes.tableCell}>
-                    <Button color="error" onClick={() => deleteResident(resident.resident_id)} className="delete-button">
-                      Delete
-                    </Button>
-                    <Button onClick={() => handleEditClick(resident)} className="edit-button">
-                      Edit
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={13} align="center">No residents found</TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+        />
+      </div>
+
       <EditResidentModal
         open={open}
         handleClose={() => setOpen(false)}

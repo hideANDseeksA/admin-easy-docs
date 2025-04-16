@@ -3,12 +3,13 @@ import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     Grid, TextField, Button, FormControl, InputLabel, Select, MenuItem
 } from "@mui/material";
-import Swal from "sweetalert2";
 import axios from "axios";
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import useSwalTheme from '../utils/useSwalTheme';
 import dayjs from "dayjs";  // Import Dayjs for date formatting
+import { API_URL,headername,keypoint } from '../utils/config';
 
 const EditResidentDialog = ({ open, handleClose, resident, fetchResidents }) => {
     const defaultResident = {
@@ -19,12 +20,15 @@ const EditResidentDialog = ({ open, handleClose, resident, fetchResidents }) => 
         age: "",
         address: "",
         sex: "",
-        status: "",
         birthplace: "",
-        birthday: null,  // Ensure correct initial format
+        birthday: null,
+        vote: "",
+        vulnerable_status: "",
+        
     };
 
     const [formValues, setFormValues] = useState(defaultResident);
+    const SwalInstance = useSwalTheme();
 
     useEffect(() => {
         if (resident) {
@@ -42,12 +46,29 @@ const EditResidentDialog = ({ open, handleClose, resident, fetchResidents }) => 
     const handleDateChange = (date) => {
         setFormValues({ ...formValues, birthday: date ? dayjs(date).format("YYYY-MM-DD") : "" });
     };
+    const checkInternet = () => {
+        if (!navigator.onLine) {
+          SwalInstance.fire({
+            icon: 'error',
+            title: 'No Internet',
+            text: 'You are currently offline. Please check your connection.',
+            toast: true,
+            timer: 3000,
+            position: 'top-end',
+            showConfirmButton: false,
+          });
+          return false;
+        }
+        return true;
+      };
+    
 
     const handleSubmit = async (e) => {
+        if (!checkInternet()) return;
         e.preventDefault();
         handleClose();
-
-        const result = await Swal.fire({
+       
+        const result = await SwalInstance.fire({
             title: "Are you sure?",
             text: "Do you want to update this resident's details?",
             icon: "warning",
@@ -58,23 +79,27 @@ const EditResidentDialog = ({ open, handleClose, resident, fetchResidents }) => 
         });
 
         if (result.isConfirmed) {
-            Swal.fire({
+            SwalInstance.fire({
                 title: "Updating...",
                 text: "Please wait while updating resident details.",
                 allowOutsideClick: false,
-                didOpen: () => Swal.showLoading(),
+                didOpen: () => SwalInstance.showLoading(),
             });
 
             try {
                 await axios.put(
-                    `https://bned-backend.onrender.com/api/update_resident/${resident.resident_id}`,
-                    formValues
+                    `${API_URL}/api/residents/update/${resident.resident_id}`,
+                    formValues,{
+                        headers:{
+                            [headername]:keypoint
+                        }
+                    }
                 );
                 fetchResidents();
-                Swal.fire("Updated!", "Resident details have been updated.", "success");
+                SwalInstance.fire("Updated!", "Resident details have been updated.", "success");
             } catch (error) {
                 console.error("Error updating resident:", error);
-                Swal.fire("Error!", "Failed to update resident.", "error");
+                SwalInstance.fire("Error!", "Failed to update resident.", "error");
             }
         }
     };
@@ -98,7 +123,20 @@ const EditResidentDialog = ({ open, handleClose, resident, fetchResidents }) => 
                             <TextField fullWidth label="Extension Name (Jr, Sr, etc.)" name="extension_name" value={formValues.extension_name} onChange={handleChange} />
                         </Grid>
                         <Grid item xs={12} sm={6}>
-                            <TextField fullWidth label="Age" type="number" name="age" value={formValues.age} onChange={handleChange} required />
+                            <TextField
+                                fullWidth
+                                label="Age"
+                                type="number"
+                                name="age"
+                                value={formValues.age}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    if (value === "" || (value.length <= 3 && parseInt(value) <= 200)) {
+                                        handleChange(e);
+                                    }
+                                }}
+                                required
+                            />
                         </Grid>
                         <Grid item xs={12} sm={6}>
                             <FormControl fullWidth required>
@@ -124,8 +162,8 @@ const EditResidentDialog = ({ open, handleClose, resident, fetchResidents }) => 
                             <FormControl fullWidth required>
                                 <InputLabel>Gender</InputLabel>
                                 <Select name="sex" value={formValues.sex} onChange={handleChange}>
-                                    <MenuItem value="M">Male</MenuItem>
-                                    <MenuItem value="F">Female</MenuItem>
+                                    <MenuItem value="Male">Male</MenuItem>
+                                    <MenuItem value="Female">Female</MenuItem>
                                 </Select>
                             </FormControl>
                         </Grid>
@@ -154,6 +192,30 @@ const EditResidentDialog = ({ open, handleClose, resident, fetchResidents }) => 
                                     slotProps={{ textField: { fullWidth: true, required: true } }}
                                 />
                             </LocalizationProvider>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <TextField
+                                fullWidth
+                                label="Vulnerable Sector"
+                                name="vulnerable_status"
+                                value={formValues.vulnerable_status}
+                                onChange={handleChange}
+                                required
+                            />
+                            
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <FormControl fullWidth required>
+                                <InputLabel>Voting Status</InputLabel>
+                                <Select
+                                    name="vote"
+                                    value={formValues.vote}
+                                    onChange={handleChange}
+                                >
+                                    <MenuItem value="ACTIVE">ACTIVE</MenuItem>
+                                    <MenuItem value="NOT ACTIVE">NOT ACTIVE</MenuItem>
+                                </Select>
+                            </FormControl>
                         </Grid>
                     </Grid>
                 </form>

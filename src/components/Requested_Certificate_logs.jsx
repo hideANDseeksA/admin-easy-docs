@@ -1,88 +1,79 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Paper, Typography, Card, CardContent, Grid, Box, Toolbar, TextField, Tooltip, Button
+  Typography,  Grid, Box, Toolbar, TextField, Tooltip, Button,
+  IconButton
 } from '@mui/material';
-import Swal from 'sweetalert2';
+import useSwalTheme from '../utils/useSwalTheme';
+import StatCard  from './stat';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { makeStyles } from '@mui/styles';
+import { DataGrid } from '@mui/x-data-grid';
+import ManageHistoryIcon from '@mui/icons-material/ManageHistory';
+import SearchIcon from '@mui/icons-material/Search';
+import DownloadForOfflineIcon from '@mui/icons-material/DownloadForOffline';
+import SentimentDissatisfiedIcon from '@mui/icons-material/SentimentDissatisfied';
+import AllInboxIcon from "@mui/icons-material/AllInbox";
+import CancelIcon from "@mui/icons-material/Cancel";
+import DoNotDisturbIcon from "@mui/icons-material/DoNotDisturb";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { API_URL,headername,keypoint } from '../utils/config';
 
-const useStyles = makeStyles({
-  tableContainer: {
-    maxHeight: '450px',
-    overflow: 'auto',
-    '&::-webkit-scrollbar': {
-      width: '8px',
-    },
-    '&::-webkit-scrollbar-track': {
-      background: '#f1f1f1',
-    },
-    '&::-webkit-scrollbar-thumb': {
-      background: '#888',
-      borderRadius: '4px',
-    },
-    '&::-webkit-scrollbar-thumb:hover': {
-      background: '#555',
-    },
-  },
-  tableHead: {
-    backgroundColor: '#f5f5f5',
-    '& th': {
-      fontWeight: 'bold',
-      color: '#333',
-      textAlign: 'center', // Center align table headers
-    },
-  },
-  tableRow: {
-    textAlign: 'center', // Center align table headers
-    '&:nth-of-type(odd)': {
-      backgroundColor: '#f9f9f9',
-    },
-    '&:hover': {
-      backgroundColor: '#e0f7fa',
-    },
-  },
-  tableCell: {
-    textAlign: 'center', // Center align table cells
-  },
-});
 
 const CertificateRequestLogs = () => {
   const [certificateRequests, setCertificateRequests] = useState([]);
   const [filteredRequests, setFilteredRequests] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading] = useState(false);
+  const SwalInstance = useSwalTheme();
+  const checkInternet = () => {
+    if (!navigator.onLine) {
+      SwalInstance.fire({
+        icon: 'error',
+        title: 'No Internet',
+        text: 'You are currently offline. Please check your connection.',
+        toast: true,
+        timer: 3000,
+        position: 'top-end',
+        showConfirmButton: false,
+      });
+      return false;
+    }
+    return true;
+  };
+
+
+
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        Swal.fire({
-          title: 'Loading...',
-          text: 'Fetching certificate requests.',
-          allowOutsideClick: false,
-          didOpen: () => {
-            Swal.showLoading();
-          }
-        });
+        SwalInstance.fire({ title: 'Loading...', text: 'Fetching certificate requests.', allowOutsideClick: false, didOpen: () => SwalInstance.showLoading() });
 
-        const response = await fetch('https://bned-backend.onrender.com/api/get_transaction_history');
-        const data = await response.json();
-        setCertificateRequests(data.transactions);
-        setFilteredRequests(data.transactions);
-        Swal.close();
-      } catch (error) {
-        Swal.close();
-        console.error('Error fetching certificate requests:', error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'Could not fetch certificate request data. Please try again later.',
+        const response = await fetch(`${API_URL}/api/transaction/history`, {
+          headers: {
+          [headername]:keypoint
+          },
         });
+        const data = await response.json();
+
+        const transactionsWithId = data.transactions.map((item, index) => ({
+          ...item,
+          unique_id: `${item.transaction_id}-${index}` // Or use a UUID here
+        }));
+
+        setCertificateRequests(transactionsWithId);
+        setFilteredRequests(transactionsWithId);
+        SwalInstance.close();
+      } catch (error) {
+        SwalInstance.close();
+        console.error('Error fetching certificate requests:', error);
+        SwalInstance.fire({ icon: 'error', title: 'Error', text: 'Could not fetch certificate request data. Please try again later.' });
       }
     };
 
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   // Filter requests based on search query
   useEffect(() => {
@@ -102,14 +93,19 @@ const CertificateRequestLogs = () => {
 
   // Handle Delete All
   const deleteAllHistory = async () => {
+    
     try {
-      const response = await fetch('https://bned-backend.onrender.com/api/delete_transactions_history', {
+      const response = await fetch(`${API_URL}/api/transaction/history`, {
         method: 'DELETE',
+        headers:{
+                 [headername]:keypoint
+        }
+
       });
 
       const message = await response.text();
       if (response.ok) {
-        Swal.fire('Deleted!', message, 'success');
+        SwalInstance.fire('Deleted!', message, 'success');
         setCertificateRequests([]);
         setFilteredRequests([]);
       } else {
@@ -122,7 +118,8 @@ const CertificateRequestLogs = () => {
 
   // Confirm Delete with SweetAlert
   const confirmDelete = () => {
-    Swal.fire({
+    if (!checkInternet()) return;
+    SwalInstance.fire({
       title: 'Are you sure?',
       text: 'You will not be able to recover this data!',
       icon: 'warning',
@@ -137,131 +134,297 @@ const CertificateRequestLogs = () => {
     });
   };
 
+ 
   const showCertificateDetails = (certificateDetails) => {
     const formattedDetails = Object.entries(certificateDetails)
-      .map(([key, value]) => `<strong>${key}:</strong> ${value}`)
-      .join("<br>");
-
-    Swal.fire({
+      .map(
+        ([key, value]) => `
+          <div style="margin-bottom: 8px;">
+            <span style="font-weight: 600;">${key}:</span>
+            <span style="margin-left: 6px;">${value}</span>
+          </div>`
+      )
+      .join("");
+  
+    SwalInstance.fire({
       title: "Certificate Information",
-      html: `<div class='text-left p-4 bg-gray-100 rounded-lg text-sm leading-6' style='text-align: center;'>${formattedDetails}</div>`,
+      html: `
+        <div style="
+          text-align: left;
+          padding: 1rem;
+          border-radius: 10px;
+          font-size: 15px;
+          line-height: 1.8;
+          max-height: 250px;
+          overflow-y: auto;
+        ">
+          ${formattedDetails}
+        </div>
+      `,
       icon: "info",
       confirmButtonText: "Close",
       customClass: {
-        popup: "w-[90%] md:w-[400px] p-6",
-        title: "text-lg md:text-xl",
-        confirmButton: "text-sm md:text-base px-5 py-2 bg-[#4CAF50] text-white rounded-lg",
+        popup: "swal2-popup-custom",
+        title: "swal2-title-custom",
+        confirmButton: "swal2-confirm-custom",
+      },
+      showClass: {
+        popup: "swal2-show animate__animated animate__fadeInDown",
+      },
+      hideClass: {
+        popup: "swal2-hide animate__animated animate__fadeOutUp",
       },
     });
   };
+  
+  
+  
 
-  const StatisticCard = ({ title, value, icon }) => (
-    <Grid item xs={12} sm={3}>
-      <Card variant="outlined" className="stat-box">
-        <CardContent style={{ textAlign: "center" }}>
-          <span className="icon" style={{ display: "block", marginBottom: "8px" }}>
-            {icon}
-          </span>
-          <Typography variant="h6" style={{ fontWeight: "bold" }}>{title}</Typography>
-          <Typography variant="body1" style={{ fontSize: "1.2em" }}>{value}</Typography>
-        </CardContent>
-      </Card>
-    </Grid>
+  const downloadMonthlySummary = async () => {
+    if (!checkInternet()) return;
+    const result = await SwalInstance.fire({
+      title: "Download Summary?",
+      text: "This will download the  Certificate Summary as a .docx file.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, download it!",
+    });
+  
+    if (result.isConfirmed) {
+      try {
+        const response = await fetch(`${API_URL}/api/transaction/summary/monthly/download`, {
+          headers: {
+            [headername]:keypoint
+          },
+        });
+  
+        if (!response.ok) throw new Error("Failed to download document");
+  
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+  
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "monthly_certificate_summary.docx";
+        link.click();
+  
+        window.URL.revokeObjectURL(url);
+  
+        SwalInstance.fire("Downloaded!", "The document has been saved to your device.", "success");
+      } catch (err) {
+        console.error("Download error:", err);
+        SwalInstance.fire("Error", "Something went wrong while downloading.", "error");
+      }
+    }
+  };
+  const CustomNoRowsOverlay = () => (
+    <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+      <SentimentDissatisfiedIcon sx={{ fontSize: 40, color: '#3D4751' }} />
+      <Box sx={{ mt: 2 }}>No Data Available</Box>
+    </Box>
   );
 
-  const classes = useStyles();
+
+
+  const columns = [
+    { field: 'transaction_id', headerName: 'Transaction ID', flex: 1, align: 'center', headerAlign: 'center' },
+    { field: 'resident_id', headerName: 'Resident ID', flex: 1, align: 'center', headerAlign: 'center' },
+    { field: 'resident_email', headerName: 'Resident Email', flex: 1, align: 'center', headerAlign: 'center' },
+    { field: 'certificate_type', headerName: 'Certificate Type', flex: 1.2, align: 'center', headerAlign: 'center' },
+    {
+      field: 'certificate_details',
+      headerName: 'Certificate Details',
+      flex: 1,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params) => (
+        <div
+          className="border p-3 text-blue-600 underline cursor-pointer hover:text-blue-800"
+          onClick={() => showCertificateDetails(params.value)}
+        >
+          View Details
+        </div>
+      ),
+    },
+    {
+      field: 'date_requested',
+      headerName: 'Date Requested',
+      flex: 1,
+      align: 'center',
+      headerAlign: 'center',
+
+    },
+    {
+      field: 'status',
+      headerName: 'Status',
+      flex: 1,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params) => (
+        <span
+          style={{
+            fontWeight: 'bold',
+            color:
+
+              params.value === 'Pending'
+                ? 'red'
+
+                : 'blue',
+          }}
+        >
+          {params.value}
+        </span>
+      ),
+    },
+    {
+      field: 'date_action',
+      headerName: 'Date Action',
+      flex: 1,
+      align: 'center',
+      headerAlign: 'center',
+
+    }
+
+  ];
 
   return (
-    <Box sx={{ padding: '20px', backgroundColor: '#ffffff', height: '500px', width: '100%' }}>
-      <Grid container spacing={2} justifyContent="center" sx={{ marginBottom: "20px" }}>
-        <StatisticCard title="Total Request" value={completedCount + cancelledCount + rejectCount} />
-        <StatisticCard title="Completed Request" value={completedCount} />
-        <StatisticCard title="Cancelled Request" value={cancelledCount} />
-        <StatisticCard title="Rejected Request" value={rejectCount} />
+    <Box sx={{ padding: '20px', height: '500px', width: '100%' }}>
+
+      <Typography variant="h4" gutterBottom>Requested Certificates Logs</Typography>
+      <Grid
+        container
+        spacing={2}
+        alignItems="center"
+        justifyContent="space-between"
+        sx={{ marginBottom: "10px" }}
+      >
+        {/* Left Side: Title */}
+        <Grid item xs={12} sm={6}>
+          <Box display="flex" alignItems="center" gap={0.5} sx={{ minHeight: "40px" }}>
+            <ManageHistoryIcon fontSize="medium" color="primary" />
+            <Typography variant="subtitle1" fontWeight="bold">Dashboard / History</Typography>
+          </Box>
+        </Grid>
+
+        {/* Right Side: Search Button + Field */}
+        <Grid item xs={12} sm={6}>
+          <Box
+            display="flex"
+            justifyContent="flex-end"
+            alignItems="center"
+            sx={{ width: '100%', marginBottom: "10px" }}
+          >
+            <Box
+              display="flex"
+              alignItems="center"
+              sx={{
+                maxWidth: '100%',
+                transition: 'all 0.3s ease',
+              }}
+            >
+              <Toolbar
+                sx={{
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap', // responsive
+                  gap: 2,            // spacing between items
+                  paddingY: 2,
+                }}
+              >
+                {/* Left side: Search */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <SearchIcon fontSize="medium" color="primary" />
+                  <TextField
+                    label="Search"
+                    variant="outlined"
+                    size="small"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    sx={{ minWidth: '200px' }}
+                  />
+                </Box>
+
+                {/* Right side: Delete button */}
+                <Tooltip title="Delete All">
+                  <span>
+                    <Button
+                      color="error"
+                      size="medium"
+                      onClick={confirmDelete}
+                      disabled={certificateRequests.length === 0 || loading}
+                      variant="outlined"
+                      startIcon={<DeleteIcon />}
+                      sx={{ minWidth: '120px' }}
+                    >
+                      Delete
+                    </Button>
+                  </span>
+                </Tooltip>
+                <IconButton title="Dowload Summary" color="primary" onClick={downloadMonthlySummary}>
+                  <DownloadForOfflineIcon fontSize="large" />
+                </IconButton>
+              </Toolbar>
+
+            </Box>
+          </Box>
+        </Grid>
       </Grid>
+          <Grid container spacing={2} justifyContent="center" sx={{ marginBottom: "20px" }}>
+              
+              <Grid item xs={12} sm={3}>
+                <StatCard
+                  title="Total "
+                  value={completedCount + cancelledCount + rejectCount}
+                  percentage="Over All Request"
+                  icon={<AllInboxIcon sx={{ color: "#fff" }} />}
+      
+                />
+              </Grid>
+              <Grid item xs={12} sm={3}>
+                <StatCard
+                  title="Completed"
+                  value={completedCount}
+                  percentage="Total requested that completed"
+                  icon={<CheckCircleIcon sx={{ color: "#fff" }} />}
+      
+                />
+              </Grid>
+              <Grid item xs={12} sm={3}>
+                <StatCard
+                  title="Cancel"
+                  value={cancelledCount}
+                  percentage="Total request has been cancelled"
+                  icon={<CancelIcon sx={{ color: "#fff" }} />}
+      
+                />
+              </Grid>
+              <Grid item xs={12} sm={3}>
+                <StatCard
+                  title="Reject"
+                  value={rejectCount}
+                  percentage="Total request has been rejected"
+                  icon={<DoNotDisturbIcon sx={{ color: "#fff" }} />}
+      
+                />
+              </Grid>
+            </Grid>
 
-      {/* Search and Delete Actions */}
-      <Toolbar sx={{ justifyContent: 'space-between', }}>
-        <TextField
-          label="Search"
-          variant="outlined"
-          fullWidth
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          sx={{
-            width: '90%',
-            height: '50px',
-            marginBottom: '15px',
 
-          }}
-        />
+      <div style={{ height: 440, width: '100%' }}>
 
-        <Tooltip title="Delete All">
-          <span>
-            <Button
-              sx={{ marginBottom: '10px' }}
-              color="error"
-              onClick={confirmDelete} // Trigger confirmation dialog
-              disabled={certificateRequests.length === 0 || loading}
-              variant="outlined" startIcon={<DeleteIcon />}>
-              Delete
-            </Button>
-          </span>
-        </Tooltip>
+        <DataGrid
+          rows={filteredRequests}
+          columns={columns}
+          getRowId={(row) => row.unique_id}
+          pageSize={10}
+          rowsPerPageOptions={[10, 20, 50]}
+          slots={{
+            noRowsOverlay: CustomNoRowsOverlay,
+          }} />
+      </div>
 
-      </Toolbar>
-
-      <TableContainer component={Paper} className={classes.tableContainer}>
-        <Table stickyHeader>
-          <TableHead className={classes.tableHead}>
-            <TableRow>
-              <TableCell className={classes.tableCell}>Transaction ID</TableCell>
-              <TableCell className={classes.tableCell}>Resident ID</TableCell>
-              <TableCell className={classes.tableCell}>Resident Email</TableCell>
-              <TableCell className={classes.tableCell}>Certificate Type</TableCell>
-              <TableCell className={classes.tableCell}>Certificate Details</TableCell>
-              <TableCell className={classes.tableCell}>Date Requested</TableCell>
-              <TableCell className={classes.tableCell}>Status</TableCell>
-              <TableCell className={classes.tableCell}>Date Claimed</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredRequests.length > 0 ? (
-              filteredRequests.map((request) => (
-                <TableRow key={request.transaction_id} className={classes.tableRow}>
-                  <TableCell align='center'>{request.transaction_id}</TableCell>
-                  <TableCell align='center'>{request.resident_id}</TableCell>
-                  <TableCell align='center'>{request.resident_email}</TableCell>
-                  <TableCell align='center'>{request.certificate_type}</TableCell>
-                  <TableCell align='center'
-                    className={`${classes.tableCell} border p-3 text-blue-600 underline cursor-pointer hover:text-blue-800`}
-                    onClick={() => showCertificateDetails(request.certificate_details)}
-                  >
-                    View Details
-                  </TableCell>
-                  <TableCell align='center'>{new Date(request.date_requested).toLocaleString()}</TableCell>
-                  <TableCell align='center' sx={{
-                    fontWeight: 'bold',
-                    color: request.status === 'Approved' ? 'green' :
-                      request.status === 'Pending' ? 'yellow' :
-                        request.status === 'On Process' ? 'orange' :
-                          request.status === 'Ready To Claim' ? 'blue' : 'black'
-                  }}>
-                    {request.status}
-                  </TableCell>
-                  <TableCell align='center'>{request.date_issued ? new Date(request.date_issued).toLocaleString() : 'N/A'}</TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={8} align="center">
-                  No history transactions.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
     </Box>
   );
 };

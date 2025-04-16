@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, Typography, Select, MenuItem, FormControl, InputLabel, Grid } from '@mui/material';
 import { LineChart } from '@mui/x-charts/LineChart';
 import Swal from 'sweetalert2';
-
+import { API_URL,headername,keypoint } from '../utils/config';
 const TransactionChart = () => {
     const currentYear = new Date().getFullYear(); // Get the current year
     const [timeFrame, setTimeFrame] = useState("monthly");
@@ -19,7 +19,12 @@ const TransactionChart = () => {
                     didOpen: () => Swal.showLoading(),
                 });
 
-                const response = await fetch('https://bned-backend.onrender.com/api/transaction-history'); // Replace with your API URL
+                const response = await fetch(`${API_URL}/api/transaction/graph-history`,{
+                    headers: {
+                        [headername]:keypoint
+                      }
+                }); // Replace with your API URL
+              
                 const data = await response.json();
 
                 const convertToNumbers = (dataArray) => 

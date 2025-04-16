@@ -36,3 +36,7 @@
     transform: rotate(360deg);
   }
 }
+/* index.css or App.css */
+.swal2-toast.swal2-zfix {
+  z-index: 2000 !important; /* Ensures it appears above AppBar/menu */
+}
