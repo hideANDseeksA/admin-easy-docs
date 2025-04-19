@@ -89,7 +89,7 @@ const CertificateRequestLogs = () => {
   // statistics
   const completedCount = certificateRequests.filter(req => req.status === 'Completed').length;
   const cancelledCount = certificateRequests.filter(req => req.status === 'Cancelled').length;
-  const rejectCount = certificateRequests.filter(req => req.status === 'Rejected').length;
+  const rejectCount = certificateRequests.filter(req => req.status === 'Reject').length;
 
   // Handle Delete All
   const deleteAllHistory = async () => {
