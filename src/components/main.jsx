@@ -214,9 +214,14 @@ function ToolbarActionsSearch() {
     });
   
     if (result.isConfirmed) {
-         SwalInstance.showLoading({
-        title:"Updating Status"
-      });
+       SwalInstance.fire({
+      title: 'Updating status..',
+      allowOutsideClick: false,
+      didOpen: () => {
+        SwalInstance.showLoading();
+      }
+    });
+       
       try {
         const response = await fetch(`${API_URL}/api/transaction/update_status`, {
           method: "PUT",
