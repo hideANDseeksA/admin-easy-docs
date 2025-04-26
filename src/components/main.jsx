@@ -215,6 +215,9 @@ function ToolbarActionsSearch() {
   
     if (result.isConfirmed) {
       try {
+          SwalInstance.showLoading({
+        title:"Updating Status"
+      });
         const response = await fetch(`${API_URL}/api/transaction/update_status`, {
           method: "PUT",
           headers: {
@@ -229,7 +232,7 @@ function ToolbarActionsSearch() {
         if (!response.ok) {
           throw new Error(data.error || "Failed to update status");
         }
-  
+     SwalInstance.close();
         SwalInstance.fire({
           icon: "success",
           title: "Status Updated",
@@ -238,7 +241,7 @@ function ToolbarActionsSearch() {
           showConfirmButton: false,
         });
       } catch (error) {
-        console.error("Failed to update status:", error.message);
+          SwalInstance.close();
         SwalInstance.fire({
           icon: "error",
           title: "Error",
