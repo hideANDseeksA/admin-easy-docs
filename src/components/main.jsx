@@ -214,10 +214,10 @@ function ToolbarActionsSearch() {
     });
   
     if (result.isConfirmed) {
-      try {
-          SwalInstance.showLoading({
+         SwalInstance.showLoading({
         title:"Updating Status"
       });
+      try {
         const response = await fetch(`${API_URL}/api/transaction/update_status`, {
           method: "PUT",
           headers: {
