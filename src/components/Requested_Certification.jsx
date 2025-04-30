@@ -49,7 +49,8 @@ const CertificateRequestTable = () => {
         SwalInstance.showLoading();
       },
     });
-  
+
+    socket.emit('register', { role: 'admin' });
     socket.emit("getAllTransactions");
   
     socket.on('transactions', (data) => {
